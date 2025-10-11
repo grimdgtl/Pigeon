@@ -24,10 +24,10 @@
       </div>
       <div class="shrink-0 grow-0 flex mx-4 text-white">
         <a href={Routes.project_path(@conn, :index)} class="flex items-center sm:h-24 my-4">
-          <span class="flex justify-end h-10 w-10">
-            <%= render_icon(:logo) %>
+          <span class="flex justify-end h-16 w-16">
+            <img src={Routes.static_path(@conn, "/images/pigeon-logo.png")} alt="Pigeon" class="w-auto" />
           </span>
-          <span class="text-2xl font-light">Keila</span>
+          <span class="text-2xl font-light">Pigeon</span>
         </a>
       </div>
       <nav class="font-medium hidden flex-col gap-1 mt-2 mb-4 sm:flex flex-grow">
@@ -164,10 +164,10 @@
   <header class="bg-gray-900">
     <div class="container my-4 text-emerald-500 flex justify-center">
       <a href={Routes.project_path(@conn, :index)} class="inline-flex items-start">
-        <span class="flex h-11 w-11 -mr-1">
-          <%= render_icon(:logo) %>
+        <span class="flex h-20 w-20 -mr-1">
+          <img src={Routes.static_path(@conn, "/images/pigeon-logo.png")} alt="Pigeon" class="w-auto" />
         </span>
-        <span class="text-3xl font-light">Keila</span>
+        <!--<span class="text-3xl font-light">Pigeon</span>-->
       </a>
     </div>
   </header>

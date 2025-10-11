@@ -3,11 +3,11 @@
     <div class="container grid sm:grid-cols-3">
       <div>
         <h3 class="flex gap-2 mb-4">
-          <span class="flex h-12 w-12 text-emerald-600">
-            <%= render_icon(:logo) %>
+          <span class="flex h-16 w-16 text-emerald-600">
+            <img src={Routes.static_path(@conn, "/images/pigeon-logo.png")} alt="Pigeon" class="w-auto" />
           </span>
           <p>
-            <span class="font-bold">Keila</span><br /> <%= gettext("Open Source Newsletters") %>
+            <span class="font-bold">Pigeon</span><br /> <%= gettext("Newsletter Service") %>
           </p>
         </h3>
       </div>

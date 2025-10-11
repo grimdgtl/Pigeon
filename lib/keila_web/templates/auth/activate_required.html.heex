@@ -6,7 +6,7 @@
     <p class="text-lg text-gray-200">
       <%= dgettext(
         "auth",
-        "You need to verify your email before you can use Keila. Please check your inbox."
+        "You need to verify your email before you can use Pigeon. Please check your inbox."
       ) %>
     </p>
     <.form let={_f} for={@conn} action={Routes.auth_path(@conn, :post_activate_resend)}>

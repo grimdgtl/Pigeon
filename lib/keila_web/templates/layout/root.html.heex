@@ -11,12 +11,15 @@
         view_module(@conn),
         view_template(@conn),
         :title,
-        gettext("Open Source Newsletter Tool")
-      ) <> " · Keila" %>
+        gettext("Pigeon Newsletter Service")
+      ) <> " · Pigeon" %>
     </title>
-    <meta property="og:image" content={Routes.static_url(@conn, "/images/og_image.png")} />
-    <meta property="og:description" content="Open Source Newsletters" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:description" content="Pigeon — self-hosted email newsletter platform." />
+    <meta property="og:image" content={Routes.static_url(@conn, "/images/pigeon_og.png")} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#111827" />
+    <link rel="icon" type="image/png" href={Routes.static_path(@conn, "/pigeon-favicon.png")} />
+    <link rel="manifest" href={Routes.static_path(@conn, "/site.webmanifest")} />
     <link phx-track-static rel="stylesheet" href={Routes.static_path(@conn, "/css/app.css")} />
     <script
       defer
