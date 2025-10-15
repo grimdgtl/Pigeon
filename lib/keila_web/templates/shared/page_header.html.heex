@@ -1,0 +1,15 @@
+<header class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-semibold text-gray-900">
+      <%= @title || @page_title || "Untitled" %>
+    </h1>
+    <%= if assigns[:subtitle] do %>
+      <p class="text-gray-600 mt-1"><%= @subtitle %></p>
+    <% end %>
+  </div>
+  <%= if assigns[:actions] && @actions do %>
+    <div class="flex items-center gap-2">
+      <%= @actions %>
+    </div>
+  <% end %>
+</header>

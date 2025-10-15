@@ -1,20 +1,36 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: false, // or 'media' or 'class'
-  content: ["./js/**/*.js", "./css/**/*.*css", "../lib/*_web/**/*.*ex", "../extra/**/*_web/**/*.*ex"],
+  content: [
+    "./js/**/*.js",
+    "./css/**/*.*css",
+    "../lib/*_web.ex",
+    "../lib/*_web/**/*.*ex",
+    "../lib/*_web/templates/**/*.heex",
+    "../extra/**/*_web/**/*.*ex"
+  ],
   theme: {
     extend: {
       colors: {
+        brand: {
+          green: {
+            DEFAULT: "#16A34A", // green-600
+            hover: "#15803D",   // green-700
+            disabled: "#86EFAC" // green-300
+          },
+          bluebg: "#E6F0FF" // soft blue page background
+        },
         primary: {
-          50: '#fff7ed',
-          100: '#ffedd5',
-          200: '#fed7aa',
-          300: '#fdba74',
-          400: '#fb923c',
-          500: '#f97316', // orange-500
-          600: '#ea580c', // orange-600
-          700: '#c2410c',
-          800: '#9a3412',
-          900: '#7c2d12',
+          50: '#f0fdf4',
+          100: '#dcfce7',
+          200: '#bbf7d0',
+          300: '#86efac',
+          400: '#4ade80',
+          500: '#22c55e', // green-500
+          600: '#16a34a', // green-600
+          700: '#15803d',
+          800: '#166534',
+          900: '#14532d',
         },
         gray: {
           50: '#f9fafb',
@@ -76,6 +92,10 @@ module.exports = {
           700: '#1d4ed8',
           800: '#1e40af',
           900: '#1e3a8a',
+        },
+        card: {
+          bg: '#F3F8FF', // soft blue background for cards
+          border: '#E0E7FF', // subtle blue border
         }
       },
       fontFamily: {

@@ -1,5 +1,5 @@
 <%= if ui_refresh_enabled?() do %>
-  <%= render("shared/page_header.html", 
+  <%= render KeilaWeb.SharedView, "page_header.html", 
     title: gettext("Administer Users"),
     subtitle: dgettext("admin", "Here you can manage other users on your Pigeon instance."),
     actions: [
@@ -7,7 +7,7 @@
         ["+ ", gettext("Add user")]
       end
     ]
-  ) %>
+  %>
 <% else %>
   <!-- Fallback for old UI -->
   <div class="container flex py-8 sm:py-11 mb-4">

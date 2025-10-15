@@ -19,7 +19,9 @@
 
 /* Cards */
 .ui-refresh .card {
-  @apply bg-white rounded-lg shadow-sm p-4 mb-6;
+  @apply rounded-lg shadow-sm p-4 mb-6;
+  background-color: #F3F8FF;
+  border: 1px solid #E0E7FF;
 }
 
 .ui-refresh .card-header {
@@ -61,7 +63,7 @@
 }
 
 .ui-refresh .form-input {
-  @apply w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500;
+  @apply w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 bg-white;
 }
 
 .ui-refresh .form-error {
@@ -78,7 +80,7 @@
 }
 
 .ui-refresh .btn-primary {
-  @apply bg-primary-500 hover:bg-primary-600 text-white focus:ring-primary-500;
+  @apply bg-primary-500 hover:bg-primary-600 disabled:bg-primary-300 disabled:cursor-not-allowed text-white focus:ring-primary-500;
 }
 
 .ui-refresh .btn-secondary {

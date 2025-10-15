@@ -2,7 +2,7 @@
   <%= if Enum.empty?(@projects) do %>
     <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div class="max-w-4xl w-full">
-        <div class="bg-white rounded-lg shadow-sm p-8">
+        <div class="card p-8">
           <div class="flex flex-col md:flex-row items-center gap-8">
             <div class="flex-shrink-0">
               <img src={Routes.static_path(@conn, "/images/pigeon-logo.png")} alt="Pigeon" class="h-24 w-auto mx-auto" />
@@ -29,14 +29,14 @@
       </div>
     </div>
   <% else %>
-    <%= render("shared/page_header.html", 
+    <%= render KeilaWeb.SharedView, "page_header.html", 
       title: gettext("Your Projects"),
       actions: [
         link(to: Routes.project_path(@conn, :new), class: "btn btn-primary") do
           ["+ ", gettext("Create a new project")]
         end
       ]
-    ) %>
+    %>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       <%= for project <- @projects do %>

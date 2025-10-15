@@ -11,3 +11,50 @@ This is the main entrypoint for Tailwind/PostCSS.
 @import "./styles.scss";
 @import "./_markdown_wysiwyg.scss";
 @import "./ui.css";
+
+/* Global page background */
+:root {
+  --page-bg: theme("colors.brand.bluebg");
+}
+
+/* Apply to body (we'll also add a Tailwind class in layout) */
+body {
+  background-color: var(--page-bg);
+}
+
+/* Button system overrides — primary becomes green */
+.btn.btn-primary,
+a.btn.btn-primary,
+button.btn.btn-primary,
+input[type="submit"].btn.btn-primary {
+  background-color: theme("colors.brand.green.DEFAULT");
+  border-color: theme("colors.brand.green.DEFAULT");
+  color: #fff;
+}
+
+.btn.btn-primary:hover,
+a.btn.btn-primary:hover,
+button.btn.btn-primary:hover,
+input[type="submit"].btn.btn-primary:hover {
+  background-color: theme("colors.brand.green.hover");
+  border-color: theme("colors.brand.green.hover");
+}
+
+.btn.btn-primary:disabled,
+a.btn.btn-primary:disabled,
+button.btn.btn-primary:disabled,
+input[type="submit"].btn.btn-primary:disabled {
+  background-color: theme("colors.brand.green.disabled");
+  border-color: theme("colors.brand.green.disabled");
+  color: #0a0a0a;
+  cursor: not-allowed;
+  opacity: .8;
+}
+
+/* Optional: if there are any explicit orange classes, neutralize them */
+.btn.btn-orange,
+a.btn.btn-orange {
+  background-color: theme("colors.brand.green.DEFAULT") !important;
+  border-color: theme("colors.brand.green.DEFAULT") !important;
+  color: #fff !important;
+}

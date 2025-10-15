@@ -30,19 +30,29 @@
     </script>
   </head>
   <%= if @current_user do %>
-    <body class={["grid grid-cols-1 sm:grid-cols-[16em,1fr]", ui_refresh_class()]}>
-      <%= render("_menu.html", assigns) %>
-      <div class="page-container">
-        <%= @inner_content %>
-        <%= render("_footer.html", assigns) %>
+    <body class={["min-h-screen bg-[color:var(--page-bg)]", ui_refresh_class()]}>
+      <div id="app" class="min-h-screen">
+        <!-- Sidebar: fixed, non-scrolling -->
+        <aside class="fixed inset-y-0 left-0 w-64 overflow-y-auto bg-slate-900 text-white">
+          <%= render("_menu.html", assigns) %>
+        </aside>
+        <!-- Content: scrollable area with left margin equal to sidebar width -->
+        <main class="ml-64 min-h-screen">
+          <div class="page-container">
+            <%= @inner_content %>
+            <%= render("_footer.html", assigns) %>
+          </div>
+        </main>
       </div>
     </body>
   <% else %>
-    <body class={["grid grid-cols-1", ui_refresh_class()]}>
-      <%= render("_menu.html", assigns) %>
-      <div class="page-container">
-        <%= @inner_content %>
-        <%= render("_footer.html", assigns) %>
+    <body class={["min-h-screen bg-[color:var(--page-bg)]", ui_refresh_class()]}>
+      <div id="app" class="min-h-screen">
+        <%= render("_menu.html", assigns) %>
+        <div class="page-container">
+          <%= @inner_content %>
+          <%= render("_footer.html", assigns) %>
+        </div>
       </div>
     </body>
   <% end %>
