@@ -104,4 +104,12 @@ defmodule Keila.Projects do
     from(p in Project, where: p.group_id in ^user_group_ids)
     |> Repo.all()
   end
+
+  @doc """
+  Lists all projects (for super admin use only).
+  """
+  def list_all_projects do
+    from(p in Project, order_by: [desc: p.inserted_at])
+    |> Repo.all()
+  end
 end

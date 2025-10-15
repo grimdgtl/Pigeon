@@ -1,100 +1,201 @@
-<div class="container flex py-8 sm:py-11 mb-4">
-  <div class="flex-grow gap-4 flex flex-col sm:flex-row sm:items-center">
-    <h1 class="text-2xl sm:text-3xl text-gray-100">
-      <%= gettext("Administer Users") %>
-    </h1>
-    <div class="flex-grow flex flex-row-reverse justify-end gap-4 sm:flex-row">
-      <a href={Routes.user_admin_path(@conn, :new)} class="button">
-        <%= render_icon(:plus) %> <%= gettext("Add user") %>
-      </a>
+<%= if ui_refresh_enabled?() do %>
+  <%= render("shared/page_header.html", 
+    title: gettext("Administer Users"),
+    subtitle: dgettext("admin", "Here you can manage other users on your Pigeon instance."),
+    actions: [
+      link(to: Routes.user_admin_path(@conn, :new), class: "btn btn-primary") do
+        ["+ ", gettext("Add user")]
+      end
+    ]
+  ) %>
+<% else %>
+  <!-- Fallback for old UI -->
+  <div class="container flex py-8 sm:py-11 mb-4">
+    <div class="flex-grow gap-4 flex flex-col sm:flex-row sm:items-center">
+      <h1 class="text-2xl sm:text-3xl text-gray-100">
+        <%= gettext("Administer Users") %>
+      </h1>
+      <div class="flex-grow flex flex-row-reverse justify-end gap-4 sm:flex-row">
+        <a href={Routes.user_admin_path(@conn, :new)} class="button">
+          <%= render_icon(:plus) %> <%= gettext("Add user") %>
+        </a>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="container mb-4">
-  <p>
-    <%= dgettext("admin", "Here you can manage other users on your Pigeon instance.") %>
-  </p>
-</div>
+  <div class="container mb-4">
+    <p>
+      <%= dgettext("admin", "Here you can manage other users on your Pigeon instance.") %>
+    </p>
+  </div>
+<% end %>
 
 <%= if @users.page_count > 0 do %>
-  <div class="container">
-    <table class="w-full bg-gray-800">
-      <tr class="text-left">
-        <th class="p-2"><%= dgettext("admin", "Email") %></th>
-        <th class="p-2"><%= dgettext("admin", "Sign-up") %></th>
-        <th class="p-2"><%= dgettext("admin", "Activation") %></th>
-        <%= if @user_credits do %>
-          <th class="p-2"><%= dgettext("admin", "Credits") %></th>
-        <% end %>
-        <th class="p-2"></th>
-      </tr>
-      <%= for user <- @users.data do %>
-        <tr>
-          <td class="p-2">
-            <%= user.email %>
-          </td>
-          <td class="p-2">
-            <%= Calendar.strftime(user.inserted_at, "%c") %>
-          </td>
-          <td class="p-2 flex gap-2">
-            <%= if user.activated_at do %>
-              <%= Calendar.strftime(user.activated_at, "%c") %>
-            <% end %>
-          </td>
-          <%= if @user_credits do %>
-            <td>
-              <%= @user_credits[user.id] |> elem(1) %>/<%= @user_credits[user.id] |> elem(0) %>
-            </td>
-          <% end %>
-          <td>
-            <%= if @user_credits do
-              content_tag(:a,
-                href: Routes.user_admin_path(@conn, :show_credits, user.id),
-                title: dgettext("admin", "Add credits"),
-                class: "button button--text"
-              ) do
-                render_icon(:plus_circle)
-              end
-            end %>
+  <%= if ui_refresh_enabled?() do %>
+    <div class="card">
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-header table-cell"><%= dgettext("admin", "Email") %></th>
+              <th class="table-header table-cell"><%= dgettext("admin", "Sign-up") %></th>
+              <th class="table-header table-cell"><%= dgettext("admin", "Activation") %></th>
+              <%= if @user_credits do %>
+                <th class="table-header table-cell"><%= dgettext("admin", "Credits") %></th>
+              <% end %>
+              <th class="table-header table-cell"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= for user <- @users.data do %>
+              <tr class="table-row">
+                <td class="table-cell">
+                  <%= user.email %>
+                </td>
+                <td class="table-cell">
+                  <%= Calendar.strftime(user.inserted_at, "%c") %>
+                </td>
+                <td class="table-cell">
+                  <%= if user.activated_at do %>
+                    <%= Calendar.strftime(user.activated_at, "%c") %>
+                  <% end %>
+                </td>
+                <%= if @user_credits do %>
+                  <td class="table-cell">
+                    <%= @user_credits[user.id] |> elem(1) %>/<%= @user_credits[user.id] |> elem(0) %>
+                  </td>
+                <% end %>
+                <td class="table-cell">
+                  <div class="flex items-center space-x-2">
+                    <%= if @user_credits do
+                      link(to: Routes.user_admin_path(@conn, :show_credits, user.id),
+                        title: dgettext("admin", "Add credits"),
+                        class: "btn btn-sm btn-secondary"
+                      ) do
+                        "+"
+                      end
+                    end %>
 
-            <%= Keila.if_cloud do
-              content_tag(:a,
-                href: Routes.cloud_admin_path(@conn, :show_user_account_status, user.id),
-                title: dgettext("cloud", "Account status"),
-                class: "button button--text"
-              ) do
-                if @user_accounts[user.id].status == :active do
-                  render_icon(:shield_check)
-                else
-                  render_icon(:shield_exclamation)
-                end
-              end
-            end %>
-            <%= if user.id != @current_user.id do
-              [
+                    <%= Keila.if_cloud do
+                      link(to: Routes.cloud_admin_path(@conn, :show_user_account_status, user.id),
+                        title: dgettext("cloud", "Account status"),
+                        class: "btn btn-sm btn-secondary"
+                      ) do
+                        if @user_accounts[user.id].status == :active do
+                          "✓"
+                        else
+                          "!"
+                        end
+                      end
+                    end %>
+                    <%= if user.id != @current_user.id do
+                      [
+                        link(to: Routes.user_admin_path(@conn, :impersonate, user.id),
+                          title: dgettext("admin", "Login as"),
+                          class: "btn btn-sm btn-secondary"
+                        ) do
+                          "→"
+                        end,
+                        delete_form_tag(user, Routes.user_admin_path(@conn, :delete), as: :user),
+                        delete_button_tag(user, class: "btn btn-sm btn-danger")
+                      ]
+                    end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <%= if @users.page_count > 1 do %>
+        <div class="flex gap-3 justify-center py-8">
+          <%= pagination_nav(@users,
+            href: fn n -> Routes.user_admin_path(@conn, :index, %{"page" => n + 1}) end
+          ) %>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <!-- Fallback for old UI -->
+    <div class="container">
+      <table class="w-full bg-gray-800">
+        <tr class="text-left">
+          <th class="p-2"><%= dgettext("admin", "Email") %></th>
+          <th class="p-2"><%= dgettext("admin", "Sign-up") %></th>
+          <th class="p-2"><%= dgettext("admin", "Activation") %></th>
+          <%= if @user_credits do %>
+            <th class="p-2"><%= dgettext("admin", "Credits") %></th>
+          <% end %>
+          <th class="p-2"></th>
+        </tr>
+        <%= for user <- @users.data do %>
+          <tr>
+            <td class="p-2">
+              <%= user.email %>
+            </td>
+            <td class="p-2">
+              <%= Calendar.strftime(user.inserted_at, "%c") %>
+            </td>
+            <td class="p-2 flex gap-2">
+              <%= if user.activated_at do %>
+                <%= Calendar.strftime(user.activated_at, "%c") %>
+              <% end %>
+            </td>
+            <%= if @user_credits do %>
+              <td>
+                <%= @user_credits[user.id] |> elem(1) %>/<%= @user_credits[user.id] |> elem(0) %>
+              </td>
+            <% end %>
+            <td>
+              <%= if @user_credits do
                 content_tag(:a,
-                  href: Routes.user_admin_path(@conn, :impersonate, user.id),
-                  title: dgettext("admin", "Login as"),
+                  href: Routes.user_admin_path(@conn, :show_credits, user.id),
+                  title: dgettext("admin", "Add credits"),
                   class: "button button--text"
                 ) do
-                  render_icon(:login)
-                end,
-                delete_form_tag(user, Routes.user_admin_path(@conn, :delete), as: :user),
-                delete_button_tag(user, icon: :trash, class: "button button--text")
-              ]
-            end %>
-          </td>
-        </tr>
-      <% end %>
-    </table>
+                  render_icon(:plus_circle)
+                end
+              end %>
 
-    <%= if @users.page_count > 1 do %>
-      <div class="flex gap-3 justify-center py-8">
-        <%= pagination_nav(@users,
-          href: fn n -> Routes.user_admin_path(@conn, :index, %{"page" => n + 1}) end
-        ) %>
-      </div>
-    <% end %>
-  </div>
+              <%= Keila.if_cloud do
+                content_tag(:a,
+                  href: Routes.cloud_admin_path(@conn, :show_user_account_status, user.id),
+                  title: dgettext("cloud", "Account status"),
+                  class: "button button--text"
+                ) do
+                  if @user_accounts[user.id].status == :active do
+                    render_icon(:shield_check)
+                  else
+                    render_icon(:shield_exclamation)
+                  end
+                end
+              end %>
+              <%= if user.id != @current_user.id do
+                [
+                  content_tag(:a,
+                    href: Routes.user_admin_path(@conn, :impersonate, user.id),
+                    title: dgettext("admin", "Login as"),
+                    class: "button button--text"
+                  ) do
+                    render_icon(:login)
+                  end,
+                  delete_form_tag(user, Routes.user_admin_path(@conn, :delete), as: :user),
+                  delete_button_tag(user, icon: :trash, class: "button button--text")
+                ]
+              end %>
+            </td>
+          </tr>
+        <% end %>
+      </table>
+
+      <%= if @users.page_count > 1 do %>
+        <div class="flex gap-3 justify-center py-8">
+          <%= pagination_nav(@users,
+            href: fn n -> Routes.user_admin_path(@conn, :index, %{"page" => n + 1}) end
+          ) %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 <% end %>

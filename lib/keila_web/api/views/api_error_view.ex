@@ -21,13 +21,19 @@ defmodule KeilaWeb.ApiErrorView do
   end
 
   defp error_object(title, changeset = %Ecto.Changeset{}) do
-    {field, {message, _}} = changeset.errors |> List.first()
-
-    %{
-      "title" => title || "Validation failed",
-      "detail" => message,
-      "pointer" => "/data/attributes/#{field}"
-    }
+    case List.first(changeset.errors) do
+      {field, {message, _}} ->
+        %{
+          "title" => title || "Validation failed",
+          "detail" => message,
+          "pointer" => "/data/attributes/#{field}"
+        }
+      nil ->
+        %{
+          "title" => title || "Validation failed",
+          "detail" => "Unknown validation error"
+        }
+    end
   end
 
   defp error_object(title, error = %OpenApiSpex.Cast.Error{reason: :unexpected_field}) do

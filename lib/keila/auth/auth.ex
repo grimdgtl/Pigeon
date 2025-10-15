@@ -51,10 +51,8 @@ defmodule Keila.Auth do
       # Create group *Employees*
       {:ok, employees_group} = Auth.create_group(%{name: employees})
   """
-  require Logger
-  require Ecto.Query
+   require Logger
   import Ecto.Query
-
   use Keila.Repo
 
   alias Keila.Auth.{
@@ -68,7 +66,33 @@ defmodule Keila.Auth do
     Token
   }
 
+  alias Keila.Auth.ResetToken
+  alias Keila.Repo
+  alias Keila.Accounts
+
   @type token_url_fn :: (String.t() -> String.t())
+
+  @reset_base (System.get_env("RESET_URL_BASE") || "http://localhost:4000")
+
+  @doc """
+  Pokreće reset lozinke na osnovu email adrese.
+
+  Ako korisnik postoji, šalje link za reset lozinke.
+  Uvek vraća :ok da se ne odaje da li nalog postoji.
+  """
+  @spec send_password_reset(String.t()) :: :ok
+  def send_password_reset(email) when is_binary(email) do
+    case Repo.one(from u in User, where: u.email == ^email) do
+      nil ->
+        :ok
+
+      %User{id: id} = user ->
+        token = ResetToken.sign(id)
+        url = "#{@reset_base}/auth/reset/#{URI.encode_www_form(token)}"
+        Emails.send!(:password_reset_link, %{user: user, url: url})
+        :ok
+    end
+  end
 
   defp default_url_function(token) do
     Logger.debug("No URL function given")
@@ -129,6 +153,122 @@ defmodule Keila.Auth do
     Repo.get(Permission, id)
     |> Permission.changeset(params)
     |> Repo.update()
+  end
+
+  @doc """
+  Creates a new Account and optionally sets its display name via the backing `Group`.
+
+  Returns `{:ok, account}`.
+  """
+  @spec create_account(%{optional(:name) => String.t()}) :: {:ok, Accounts.Account.t()}
+  def create_account(params \\ %{}) do
+    with {:ok, account} <- Accounts.create_account() do
+      case Map.get(params, :name) || Map.get(params, "name") do
+        name when is_binary(name) and byte_size(name) > 0 ->
+          update_group(account.group_id, %{name: name})
+          {:ok, account}
+
+        _ ->
+          {:ok, account}
+      end
+    end
+  end
+
+  @doc """
+  Lists all Users belonging to the given `account_id`.
+  """
+  @spec list_account_users(Accounts.Account.id()) :: [User.t()]
+  def list_account_users(account_id) do
+    Accounts.list_account_users(account_id)
+  end
+
+  @doc """
+  Lists distinct Roles that are used within the given `account_id` group.
+  """
+  @spec list_roles(Accounts.Account.id()) :: [Role.t()]
+  def list_roles(account_id) do
+    account = Accounts.get_account(account_id)
+
+    from(r in Role,
+      join: ugr in UserGroupRole, on: ugr.role_id == r.id,
+      join: ug in UserGroup, on: ug.id == ugr.user_group_id,
+      where: ug.group_id == ^account.group_id,
+      distinct: r.id,
+      select: r
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Assigns a Role to a User within the given Account's group. Idempotent.
+
+  Accepts either `role_id` or `role_name` in the second argument map.
+  """
+  @spec assign_role_to_user(User.id(), map()) :: :ok | {:error, Ecto.Changeset.t()}
+  def assign_role_to_user(user_id, %{account_id: account_id} = args) do
+    account = Accounts.get_account(account_id)
+    role_id =
+      case args do
+        %{role_id: rid} when not is_nil(rid) -> rid
+        %{role_name: rname} when is_binary(rname) ->
+          Repo.one(from r in Role, where: r.name == ^rname, select: r.id)
+        _ -> nil
+      end
+
+    if is_nil(role_id) do
+      {:error, Ecto.Changeset.change(%User{}, %{})}
+    else
+      add_user_group_role(user_id, account.group_id, role_id)
+    end
+  end
+
+  @doc """
+  Removes a Role from a User within the given Account's group. Idempotent.
+  """
+  @spec remove_role_from_user(User.id(), map()) :: :ok
+  def remove_role_from_user(user_id, %{account_id: account_id} = args) do
+    account = Accounts.get_account(account_id)
+    role_id =
+      case args do
+        %{role_id: rid} when not is_nil(rid) -> rid
+        %{role_name: rname} when is_binary(rname) ->
+          Repo.one(from r in Role, where: r.name == ^rname, select: r.id)
+        _ -> nil
+      end
+
+    if is_nil(role_id) do
+      :ok
+    else
+      remove_user_group_role(user_id, account.group_id, role_id)
+    end
+  end
+
+  @doc """
+  Creates a Permission and assigns it to the given Role. Optionally mark as inherited.
+  """
+  @spec assign_permission_to_role(map()) :: :ok
+  def assign_permission_to_role(%{role_id: role_id, permission_name: permission_name} = params) do
+    permission =
+      Repo.get_by(Permission, name: permission_name) ||
+        case create_permission(%{name: permission_name}) do
+          {:ok, p} -> p
+          _ -> Repo.get_by!(Permission, name: permission_name)
+        end
+
+    is_inherited = Map.get(params, :is_inherited, false)
+
+    %Keila.Auth.RolePermission{role_id: role_id, permission_id: permission.id, is_inherited: is_inherited}
+    |> Repo.insert(on_conflict: :nothing)
+    :ok
+  end
+
+  @doc """
+  Checks if a User has a given permission within the Account's group.
+  """
+  @spec user_has_permission?(User.id(), %{account_id: Accounts.Account.id(), permission: String.t()}) :: boolean()
+  def user_has_permission?(user_id, %{account_id: account_id, permission: permission_name}) do
+    account = Accounts.get_account(account_id)
+    has_permission?(user_id, account.group_id, permission_name)
   end
 
   @doc """
@@ -343,7 +483,13 @@ defmodule Keila.Auth do
   If `:pagination` is not `true` or a list of options, a list of all results is returned.
   """
   @spec list_users() :: [User.t()] | Keila.Pagination.t(User.t())
-  def list_users(opts \\ []) do
+  def list_users() do
+    query = from(u in User, order_by: u.inserted_at)
+    Repo.all(query)
+  end
+
+  @spec list_users(keyword()) :: [User.t()] | Keila.Pagination.t(User.t())
+  def list_users(opts) when is_list(opts) do
     query = from(u in User, order_by: u.inserted_at)
 
     case Keyword.get(opts, :paginate) do
@@ -477,6 +623,7 @@ defmodule Keila.Auth do
 
   def find_user_by_email(_), do: nil
 
+
   @doc """
   Returns `User` with given credentials or `nil` if no such `User` exists.
 
@@ -566,7 +713,7 @@ defmodule Keila.Auth do
 
   API Keys are Auth Tokens with the scope `"api"`.
   """
-  @spec create_api_key(Keila.Auth.User.id(), Keila.Projects.Project.id(), Strimg.t()) ::
+  @spec create_api_key(Keila.Auth.User.id(), Keila.Projects.Project.id(), String.t()) ::
           {:ok, Token.t()}
   def create_api_key(user_id, project_id, name \\ nil) do
     create_token(%{
@@ -631,7 +778,7 @@ defmodule Keila.Auth do
 
   @doc """
   Sends an email with a password reset token to given User.
-
+  
   Verify the token with `find_and_delete_token("auth.reset", token_key)`
   """
   @spec send_password_reset_link(User.id(), token_url_fn) :: :ok
@@ -640,6 +787,25 @@ defmodule Keila.Auth do
     {:ok, token} = create_token(%{scope: "auth.reset", user_id: user.id})
     Emails.send!(:password_reset_link, %{user: user, url: url_fn.(token.key)})
     :ok
+  end
+
+  @doc """
+  Menja lozinku na osnovu reset tokena i postavlja novu lozinku.
+  
+  Vraća :ok ili {:error, reason}.
+  """
+  @spec reset_password_from_token(String.t(), String.t()) :: :ok | {:error, term()}
+  def reset_password_from_token(token_key, new_password) when is_binary(new_password) do
+    case find_and_delete_token(token_key, "auth.reset") do
+      %Token{user_id: user_id} ->
+        case update_user_password(user_id, %{"password" => new_password}) do
+          {:ok, _user} -> :ok
+          {:error, changeset} -> {:error, changeset}
+        end
+  
+      _ ->
+        {:error, :invalid_or_expired_token}
+    end
   end
 
   @doc """
@@ -655,5 +821,185 @@ defmodule Keila.Auth do
     {:ok, token} = create_token(%{scope: "auth.login", user_id: user.id})
     Emails.send!(:login_link, %{user: user, url: url_fn.(token.key)})
     :ok
+  end
+
+  defp build_reset_url(token_key) do
+    base = System.get_env("RESET_URL_BASE") || "http://localhost:4000"
+    "#{base}/auth/reset/#{URI.encode_www_form(token_key)}"
+  end
+
+  def reset_password(user_id, new_password) when byte_size(new_password) >= 10 do
+    alias Keila.Auth.User
+    alias Keila.Repo
+
+    case Repo.get(User, user_id) do
+      nil -> {:error, :not_found}
+      user ->
+        changeset = User.update_password_changeset(user, %{password: new_password})
+        case Repo.update(changeset) do
+          {:ok, _} -> :ok
+          {:error, changeset} -> {:error, changeset}
+        end
+    end
+  end
+
+  def reset_password(_, _), do: {:error, :weak_password}
+
+  # ============================================================================
+  # TENANT MANAGEMENT AND INVITES
+  # ============================================================================
+
+  @doc """
+  Creates a new tenant (Account/Group/Project) with an admin user.
+  This is used for the "Create Admin Now" flow.
+  """
+  def create_tenant_with_admin!(tenant_attrs, user_attrs, created_by_user_id) do
+    alias Keila.Accounts
+    alias Keila.Projects
+    alias Keila.Auth.Emails
+
+    case Repo.transaction(fn ->
+      # Create the account/group
+      {:ok, account} = Accounts.create_account()
+
+      # Create the project
+      project_attrs = %{
+        "name" => tenant_attrs["name"]
+      }
+      {:ok, project} = Projects.create_project(created_by_user_id, project_attrs)
+
+      # Create the admin user
+      user_attrs = 
+        user_attrs
+        |> Map.put("first_login_required", true)
+        |> Map.put("email", user_attrs["email"])
+
+      {:ok, user} = create_user(user_attrs, skip_activation_email: true)
+
+      # Assign admin role to the user in the project's group
+      project_account = Accounts.get_project_account(project.id)
+      assign_role_to_user(user.id, %{account_id: project_account.id, role_name: "admin"})
+
+      {account, project, user}
+    end) do
+      {:ok, {account, project, user}} -> 
+        # Send welcome email with first login token (outside transaction)
+        token = issue_first_login_token!(user.id)
+        welcome_url = build_first_login_url(token)
+        Emails.send!(:welcome_set_password, %{user: user, reset_url: welcome_url})
+        {account, project, user}
+      {:error, reason} -> raise "Failed to create tenant: #{inspect(reason)}"
+    end
+  end
+
+  @doc """
+  Sends an admin invite for a tenant.
+  This is used for the "Send Admin Invite" flow.
+  """
+  def send_admin_invite!(tenant_id, email, created_by_user_id, opts \\ []) do
+    alias Keila.Auth.Invites
+    alias Keila.Projects
+
+    role = Keyword.get(opts, :role, "admin")
+
+    # Get the project to ensure it exists
+    project = Projects.get_project(tenant_id)
+
+    # Create the invite
+    invite_attrs = %{
+      "email" => email,
+      "project_id" => project.id,
+      "role" => role,
+      "created_by_user_id" => created_by_user_id
+    }
+
+    invite = Invites.create_invite!(invite_attrs)
+
+    # Send the invite email
+    invite_url = build_invite_url(invite.token)
+    Emails.send!(:invite_admin, %{
+      email: email,
+      project_name: project.name,
+      invite_url: invite_url,
+      expires_at: invite.expires_at
+    })
+
+    invite
+  end
+
+  @doc """
+  Creates a user with the given attributes.
+  """
+  def create_user!(attrs) do
+    %User{}
+    |> User.creation_changeset(attrs)
+    |> Repo.insert!()
+  end
+
+  defp build_invite_url(token) do
+    base = System.get_env("INVITE_URL_BASE") || "http://localhost:4000"
+    "#{base}/invites/#{URI.encode_www_form(token)}"
+  end
+
+  defp build_first_login_url(token) do
+    base = System.get_env("INVITE_URL_BASE") || "http://localhost:4000"
+    "#{base}/set-password/#{URI.encode_www_form(token)}"
+  end
+
+  @doc """
+  Issues a first login token for a user who needs to set their password.
+  """
+  def issue_first_login_token!(user_id) do
+    {:ok, token} = create_token(%{scope: "auth.first_login", user_id: user_id})
+    token.key
+  end
+
+  @doc """
+  Validates a first login token and returns the user if valid.
+  """
+  def validate_first_login_token(token_key) do
+    case find_token(token_key, "auth.first_login") do
+      %Token{user_id: user_id} ->
+        user = get_user(user_id)
+        if user && user.first_login_required do
+          {:ok, user}
+        else
+          {:error, :invalid_or_expired_token}
+        end
+      nil ->
+        {:error, :invalid_or_expired_token}
+    end
+  end
+
+  @doc """
+  Consumes a first login token by setting the user's password and marking first login as complete.
+  """
+  def consume_first_login_token(token_key, password_params) do
+    case validate_first_login_token(token_key) do
+      {:ok, user} ->
+        case user
+             |> User.update_password_changeset(password_params)
+             |> Repo.update() do
+          {:ok, updated_user} ->
+            # Mark first login as no longer required
+            updated_user
+            |> User.changeset(%{first_login_required: false})
+            |> Repo.update()
+            |> case do
+              {:ok, final_user} ->
+                # Delete the token to make it single-use
+                find_and_delete_token(token_key, "auth.first_login")
+                {:ok, final_user}
+              {:error, changeset} ->
+                {:error, changeset}
+            end
+
+          {:error, changeset} ->
+            {:error, changeset}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 end

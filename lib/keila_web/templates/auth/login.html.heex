@@ -1,46 +1,119 @@
-<div class="container mt-8">
-  <.form
-    let={f}
-    for={@changeset}
-    action={Routes.auth_path(@conn, :post_login)}
-    method="post"
-    class="rounded shadow p-8 mt-8 max-w-xl mx-auto flex flex-col gap-4 bg-gray-900 text-gray-50"
-  >
-    <h1 class="text-5xl font-bold">
-      <%= dgettext("auth", "Sign in.") %>
-    </h1>
-    <p class="text-lg text-gray-200">
-      <%= dgettext("auth", "Sign in with your email address and password here.") %>
-    </p>
-    <div class="flex flex-col">
-      <%= label(f, :email, "Email") %>
-      <%= with_validation(f, :email) do %>
-        <%= text_input(f, :email, placeholder: gettext("you@pigeon.com"), class: "text-black") %>
-      <% end %>
+<%= if ui_refresh_enabled?() do %>
+  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8">
+      <div>
+        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <%= dgettext("auth", "Sign in to your account") %>
+        </h2>
+        <p class="mt-2 text-center text-sm text-gray-600">
+          <%= dgettext("auth", "Sign in with your email address and password here.") %>
+        </p>
+      </div>
+      <.form
+        let={f}
+        for={@changeset}
+        action={Routes.auth_path(@conn, :post_login)}
+        method="post"
+        class="mt-8 space-y-6"
+      >
+        <div class="rounded-md shadow-sm -space-y-px">
+          <div>
+            <%= label(f, :email, "Email address", class: "sr-only") %>
+            <%= text_input(f, :email, 
+              placeholder: gettext("you@pigeon.com"), 
+              class: "appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+            ) %>
+            <%= if f.errors[:email] do %>
+              <p class="text-sm text-danger-600 mt-1"><%= hd(f.errors[:email]) %></p>
+            <% end %>
+          </div>
+          <div>
+            <%= label(f, :password, "Password", class: "sr-only") %>
+            <%= password_input(f, :password, 
+              class: "appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+            ) %>
+            <%= if f.errors[:password] do %>
+              <p class="text-sm text-danger-600 mt-1"><%= hd(f.errors[:password]) %></p>
+            <% end %>
+          </div>
+        </div>
+
+        <div>
+          <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+              <svg class="h-5 w-5 text-primary-500 group-hover:text-primary-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clip-rule="evenodd"></path>
+              </svg>
+            </span>
+            <%= dgettext("auth", "Sign in") %>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="text-sm">
+            <a href={Routes.auth_path(@conn, :reset)} class="font-medium text-primary-600 hover:text-primary-500">
+              <%= dgettext("auth", "Forgot your password?") %>
+            </a>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <p class="text-sm text-gray-600">
+            <%= dgettext("auth", "Don't have an account?") %>
+            <a href={Routes.auth_path(@conn, :register)} class="font-medium text-primary-600 hover:text-primary-500">
+              <%= dgettext("auth", "Sign up") %>
+            </a>
+          </p>
+        </div>
+      </.form>
     </div>
-    <div class="flex flex-col">
-      <%= label(f, :password, "Password") %>
-      <%= with_validation(f, :password) do %>
-        <%= password_input(f, :password, class: "text-black") %>
-      <% end %>
-    </div>
-    <div class="flex justify-end mt-8">
-      <button class="button button--cta button--large">
-        <%= render_icon(:key) %>
-        <%= dgettext("auth", "Sign in") %>
-      </button>
-    </div>
-    <p>
-      <%= dgettext("auth", "Don’t have an account?") %>
-      <a href={Routes.auth_path(@conn, :register)} class="underline">
-        <%= dgettext("auth", "Sign up.") %>
-      </a>
-    </p>
-    <p>
-      <%= dgettext("auth", "Forgot your password?") %>
-      <a href={Routes.auth_path(@conn, :reset)} class="underline">
-        <%= dgettext("auth", "Reset your password.") %>
-      </a>
-    </p>
-  </.form>
-</div>
+  </div>
+<% else %>
+  <!-- Fallback for old UI -->
+  <div class="container mt-8">
+    <.form
+      let={f}
+      for={@changeset}
+      action={Routes.auth_path(@conn, :post_login)}
+      method="post"
+      class="rounded shadow p-8 mt-8 max-w-xl mx-auto flex flex-col gap-4 bg-gray-900 text-gray-50"
+    >
+      <h1 class="text-5xl font-bold">
+        <%= dgettext("auth", "Sign in.") %>
+      </h1>
+      <p class="text-lg text-gray-200">
+        <%= dgettext("auth", "Sign in with your email address and password here.") %>
+      </p>
+      <div class="flex flex-col">
+        <%= label(f, :email, "Email") %>
+        <%= with_validation(f, :email) do %>
+          <%= text_input(f, :email, placeholder: gettext("you@pigeon.com"), class: "text-black") %>
+        <% end %>
+      </div>
+      <div class="flex flex-col">
+        <%= label(f, :password, "Password") %>
+        <%= with_validation(f, :password) do %>
+          <%= password_input(f, :password, class: "text-black") %>
+        <% end %>
+      </div>
+      <div class="flex justify-end mt-8">
+        <button class="button button--cta button--large">
+          <%= render_icon(:key) %>
+          <%= dgettext("auth", "Sign in") %>
+        </button>
+      </div>
+      <p>
+        <%= dgettext("auth", "Don't have an account?") %>
+        <a href={Routes.auth_path(@conn, :register)} class="underline">
+          <%= dgettext("auth", "Sign up.") %>
+        </a>
+      </p>
+      <p>
+        <%= dgettext("auth", "Forgot your password?") %>
+        <a href={Routes.auth_path(@conn, :reset)} class="underline">
+          <%= dgettext("auth", "Reset your password.") %>
+        </a>
+      </p>
+    </.form>
+  </div>
+<% end %>

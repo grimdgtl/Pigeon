@@ -1,0 +1,34 @@
+<% tenants = @tenants || [] %>
+
+<h1 class="mb-4 text-xl font-semibold">Tenants</h1>
+
+<%= if tenants == [] do %>
+  <p>No tenants yet.</p>
+<% else %>
+  <table class="table-auto w-full">
+    <thead>
+      <tr>
+        <th class="text-left p-2">Project</th>
+        <th class="text-left p-2">Inserted At</th>
+        <th class="text-left p-2"></th>
+      </tr>
+    </thead>
+    <tbody>
+    <%= for t <- tenants do %>
+      <tr class="border-t">
+        <td class="p-2">
+          <%= link t.name || "Project ##{t.id}", to: Routes.tenant_admin_path(@conn, :show, t.id) %>
+        </td>
+        <td class="p-2"><%= t.inserted_at %></td>
+        <td class="p-2">
+          <%= link "Admins", to: Routes.tenant_admin_path(@conn, :show, t.id), class: "underline" %>
+        </td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<div class="mt-6">
+  <%= link "New Tenant", to: Routes.tenant_admin_path(@conn, :new), class: "px-3 py-2 bg-black text-white rounded" %>
+</div>

@@ -1,0 +1,179 @@
+#!/bin/bash
+
+# Keila Development Auto-Reload Script
+# This script provides a reliable auto-reload system for the Keila Phoenix application
+
+set -e
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Configuration
+CONTAINER_NAME="pigeon_devcontainer-elixir-1"
+PORT=${PORT:-4001}
+WORKSPACE_DIR="/workspace"
+
+echo -e "${BLUE}🚀 Keila Development Auto-Reload System${NC}"
+echo -e "${BLUE}======================================${NC}"
+
+# Function to print colored messages
+log_info() {
+    echo -e "${GREEN}ℹ️  $1${NC}"
+}
+
+log_warn() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
+}
+
+log_error() {
+    echo -e "${RED}❌ $1${NC}"
+}
+
+log_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+# Function to check if we're in the container
+check_container() {
+    if [ -f /.dockerenv ]; then
+        log_info "Running inside container"
+        return 0
+    else
+        log_warn "Not running inside container, attempting to exec into $CONTAINER_NAME"
+        return 1
+    fi
+}
+
+# Function to kill stale processes
+kill_stale_processes() {
+    log_info "Cleaning up stale processes..."
+    
+    # Kill any existing Phoenix servers
+    pkill -f "mix phx.server" 2>/dev/null || true
+    
+    # Kill any beam.smp processes
+    pkill -f "beam.smp" 2>/dev/null || true
+    
+    # Check if port is in use and kill the process
+    if lsof -ti:$PORT >/dev/null 2>&1; then
+        log_warn "Port $PORT is in use, killing process..."
+        lsof -ti:$PORT | xargs kill -9 2>/dev/null || true
+        sleep 2
+    fi
+    
+    log_success "Stale processes cleaned up"
+}
+
+# Function to setup environment
+setup_environment() {
+    log_info "Setting up development environment..."
+    
+    # Ensure we're in the workspace directory
+    cd $WORKSPACE_DIR
+    
+    # Set environment variables
+    export MIX_ENV=dev
+    export PORT=$PORT
+    
+    # Install npm dependencies if needed
+    if [ -d "assets" ] && [ -f "assets/package.json" ]; then
+        log_info "Installing npm dependencies..."
+        cd assets && npm install --silent && cd ..
+    fi
+    
+    log_success "Environment setup complete"
+}
+
+# Function to start the development server
+start_dev_server() {
+    log_info "Starting development server on port $PORT..."
+    
+    # Clean and compile
+    log_info "Cleaning and compiling..."
+    mix clean --deps >/dev/null 2>&1 || true
+    mix deps.get >/dev/null 2>&1
+    mix compile --force
+    
+    log_success "Code recompiled successfully"
+    
+    # Start Phoenix server with live reload
+    log_info "Starting Phoenix server with auto-reload..."
+    echo -e "${BLUE}🌐 Server will be available at: http://localhost:$PORT${NC}"
+    echo -e "${BLUE}📝 Watch this terminal for live reload messages${NC}"
+    echo -e "${BLUE}🔄 Auto-reload enabled for:${NC}"
+    echo -e "${BLUE}   • Elixir code changes (lib/**/*.ex)${NC}"
+    echo -e "${BLUE}   • Template changes (lib/**/*.heex, lib/**/*.eex)${NC}"
+    echo -e "${BLUE}   • Asset changes (assets/**/*.js, assets/**/*.css, assets/**/*.scss)${NC}"
+    echo -e "${BLUE}   • Static file changes (priv/static/**)${NC}"
+    echo ""
+    
+    # Start the server
+    exec mix phx.server
+}
+
+# Function to run inside container
+run_in_container() {
+    log_info "Running development server inside container..."
+    kill_stale_processes
+    setup_environment
+    start_dev_server
+}
+
+# Function to run via docker exec
+run_via_docker() {
+    log_info "Executing development server via Docker..."
+    
+    # Check if container is running
+    if ! docker ps --format "table {{.Names}}" | grep -q "^$CONTAINER_NAME$"; then
+        log_error "Container $CONTAINER_NAME is not running"
+        log_info "Please start the devcontainer first"
+        exit 1
+    fi
+    
+    # Execute the script inside the container
+    docker exec -it $CONTAINER_NAME bash -c "
+        cd $WORKSPACE_DIR
+        export MIX_ENV=dev
+        export PORT=$PORT
+        
+        # Kill stale processes
+        pkill -f 'mix phx.server' 2>/dev/null || true
+        pkill -f 'beam.smp' 2>/dev/null || true
+        
+        # Setup and start
+        if [ -d 'assets' ] && [ -f 'assets/package.json' ]; then
+            cd assets && npm install --silent && cd ..
+        fi
+        
+        mix clean --deps >/dev/null 2>&1 || true
+        mix deps.get >/dev/null 2>&1
+        mix compile --force
+        
+        echo '✅ Code recompiled successfully'
+        echo '🌐 Server will be available at: http://localhost:$PORT'
+        echo '📝 Watch this terminal for live reload messages'
+        echo '🔄 Auto-reload enabled for code, templates, and assets'
+        echo ''
+        
+        exec mix phx.server
+    "
+}
+
+# Main execution
+main() {
+    if check_container; then
+        run_in_container
+    else
+        run_via_docker
+    fi
+}
+
+# Handle script interruption
+trap 'log_warn "Development server stopped"; exit 0' INT TERM
+
+# Run main function
+main "$@"

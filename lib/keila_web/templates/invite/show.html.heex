@@ -1,0 +1,92 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+        Accept Invitation
+      </h2>
+      <p class="mt-2 text-center text-sm text-gray-600">
+        You've been invited to join <strong><%= @invite.project.name %></strong> as an <strong><%= @invite.role %></strong>
+      </p>
+    </div>
+    
+    <div class="bg-white shadow rounded-lg p-6">
+      <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-blue-700">
+              <strong>Email:</strong> <%= @invite.email %><br>
+              <strong>Expires:</strong> <%= Calendar.strftime(@invite.expires_at, "%Y-%m-%d at %H:%M UTC") %>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <.form for={%{}} as={:user} action={Routes.invite_path(@conn, :accept, @token)} method="post" class="space-y-6">
+        <div>
+          <label for="user_password" class="block text-sm font-medium text-gray-700">
+            Password
+          </label>
+          <input
+            type="password"
+            name="user[password]"
+            id="user_password"
+            required
+            minlength="10"
+            class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+            placeholder="Enter your password"
+          />
+          <p class="mt-1 text-sm text-gray-500">Password must be at least 10 characters long.</p>
+        </div>
+
+        <div>
+          <label for="user_password_confirmation" class="block text-sm font-medium text-gray-700">
+            Confirm Password
+          </label>
+          <input
+            type="password"
+            name="user[password_confirmation]"
+            id="user_password_confirmation"
+            required
+            minlength="10"
+            class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+            placeholder="Confirm your password"
+          />
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Accept Invitation
+          </button>
+        </div>
+      </.form>
+
+      <div class="mt-6">
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300" />
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white text-gray-500">Already have an account?</span>
+          </div>
+        </div>
+
+        <div class="mt-6">
+          <.link
+            href={Routes.auth_path(@conn, :login)}
+            class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Sign in instead
+          </.link>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

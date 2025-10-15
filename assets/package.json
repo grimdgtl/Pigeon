@@ -3,7 +3,8 @@
   "description": " ",
   "license": "agpl-3.0",
   "scripts": {
-    "deploy": "NODE_ENV=production tailwindcss --input=css/app.scss --output=../priv/static/css/app.css --postcss --minify"
+    "deploy": "NODE_ENV=production tailwindcss --input=css/app.scss --output=../priv/static/css/app.css --postcss --minify",
+    "watch": "tailwindcss --input=css/app.scss --output=../priv/static/css/app.css --postcss --watch"
   },
   "dependencies": {
     "@codemirror/basic-setup": "^0.20.0",

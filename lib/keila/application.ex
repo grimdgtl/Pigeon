@@ -35,10 +35,17 @@ defmodule Keila.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Keila.Supervisor]
 
-    Supervisor.start_link(children, opts)
-    |> tap(fn _ ->
-      maybe_fetch_updates()
-    end)
+    case Supervisor.start_link(children, opts) do
+      {:ok, pid} ->
+        # Schedule update check asynchronously to avoid blocking startup
+        Task.start(fn ->
+          maybe_fetch_updates()
+        end)
+        {:ok, pid}
+      
+      error ->
+        error
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration
@@ -61,10 +68,16 @@ defmodule Keila.Application do
   @env Mix.env()
   defp maybe_fetch_updates() do
     unless @env == :test do
-      :ok = Application.ensure_started(:oban)
+      try do
+        :ok = Application.ensure_started(:oban)
 
-      Keila.Instance.UpdateCronWorker.new(%{})
-      |> Oban.insert()
+        Keila.Instance.UpdateCronWorker.new(%{})
+        |> Oban.insert()
+      rescue
+        error ->
+          require Logger
+          Logger.warning("Failed to schedule update check: #{inspect(error)}")
+      end
     end
   end
 end

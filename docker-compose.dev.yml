@@ -16,8 +16,13 @@ services:
   mailhog:
     image: mailhog/mailhog:latest
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "1025:1025"  # SMTP port
+      - "8025:8025"  # Web UI port
+    environment:
+      MH_STORAGE: maildir
+      MH_MAILDIR_PATH: /maildir
+    volumes:
+      - mailhog_data:/maildir
 
   keila:
     image: elixir:1.15-alpine
@@ -39,14 +44,26 @@ services:
       URL_HOST: localhost
       URL_PORT: 4000
       PORT: 4000
-      SECRET_KEY_BASE: dev_secret_key_base_change_me
-      KEILA_USER: pigeon@grim-digital.com
-      KEILA_PASSWORD: Mdb685003!
-      MAILER_SMTP_HOST: mailhog
+    
+      SECRET_KEY_BASE: dev_secret_key_base_change_me_in_production
+      KEILA_USER: admin@example.com
+      KEILA_PASSWORD: change_me_in_production
+    
+      # MailHog SMTP configuration
+      MAILER_SMTP_HOST: "mailhog"
       MAILER_SMTP_PORT: "1025"
-      MAILER_SMTP_USERNAME:
-      MAILER_SMTP_PASSWORD:
-      MAILER_SMTP_FROM_EMAIL: dev@localhost
+      MAILER_SMTP_USERNAME: ""
+      MAILER_SMTP_PASSWORD: ""
+      MAILER_SMTP_FROM_EMAIL: "dev@localhost"
+    
+      # Legacy SMTP configuration (for compatibility)
+      SMTP_RELAY: "mailhog"
+      SMTP_USERNAME: ""
+      SMTP_PASSWORD: ""
+      SMTP_PORT: "1025"
+      SMTP_AUTH_TYPES: "none"
+      SMTP_VERIFY: "none"
+    
       PHX_SERVER: "true"
       PHX_HOST: "localhost"
     ports:
@@ -58,3 +75,6 @@ services:
         condition: service_healthy
       mailhog:
         condition: service_started
+
+volumes:
+  mailhog_data:

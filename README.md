@@ -7,6 +7,9 @@
 <a href="https://bsky.app/profile/pentacent.bsky.social" title="Folow the development of Keila on Bluesky"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpublic.api.bsky.app%2Fxrpc%2Fapp.bsky.actor.getProfile%2F%3Factor%3Dpentacent.bsky.social&query=%24.followersCount&style=flat-square&logo=bluesky&logoColor=white&label=Bluesky"></a>
 
 
+Customized Keila instance for Pigeon Newsletter Service
+Includes logo, favicon, and white-label branding.
+
 # ![The Keila logo is a stylized elephant](.github/assets/logo.svg) Keila - An Open Source Newsletter Tool
 
 Keila is an Open Source alternative to newsletter tools like Mailchimp or

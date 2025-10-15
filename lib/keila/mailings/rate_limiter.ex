@@ -58,7 +58,7 @@ defmodule Keila.Mailings.RateLimiter do
 
   @impl true
   def init(_) do
-    ets_table = :ets.new(:user_lookup, [:set, :protected])
+    ets_table = :ets.new(:rate_limiter, [:set, :protected])
 
     {:ok, %{ets_table: ets_table}}
   end

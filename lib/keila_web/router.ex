@@ -42,6 +42,14 @@ defmodule KeilaWeb.Router do
     post "/auth/reset", AuthController, :post_reset
     get "/auth/reset/:token", AuthController, :reset_change_password
     post "/auth/reset/:token", AuthController, :post_reset_change_password
+    
+    # Invite routes (public)
+    get "/invites/:token", InviteController, :show
+    post "/invites/:token", InviteController, :accept
+
+    # First login password set routes (public)
+    get "/set-password/:token", FirstLoginController, :show
+    post "/set-password/:token", FirstLoginController, :set
   end
 
   # Authenticated Routes without activation requirement
@@ -91,6 +99,19 @@ defmodule KeilaWeb.Router do
     get "/admin/shared-senders/:id/delete", SharedSenderAdminController, :delete_confirmation
 
     get "/admin/instance", InstanceAdminController, :show
+  end
+
+  # Tenant management routes (super admin only)
+  scope "/admin", KeilaWeb do
+    pipe_through [:browser, KeilaWeb.AuthSession.RequireAuthPlug, KeilaWeb.TenantAdminController.Plug.RequireSuperAdmin]
+
+    get "/tenants", TenantAdminController, :index
+    get "/tenants/new", TenantAdminController, :new
+    post "/tenants", TenantAdminController, :create
+    get "/tenants/:id", TenantAdminController, :show
+    post "/tenants/:project_id/admins", TenantAdminController, :create_admin
+    post "/tenants/:project_id/invites", TenantAdminController, :send_invite
+    delete "/invites/:token", TenantAdminController, :revoke_invite
   end
 
   # Authenticated Routes within a Project context
@@ -207,6 +228,11 @@ defmodule KeilaWeb.Router do
   scope "/api/v1" do
     pipe_through [:api, :open_api]
     get "/openapi", OpenApiSpex.Plug.RenderSpec, []
+  end
+  
+  scope "/api", KeilaWeb do
+    pipe_through :api
+    post "/auth/forgot-password", ForgotPasswordController, :create
   end
 
   scope "/api/v1", KeilaWeb do

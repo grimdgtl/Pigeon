@@ -11,6 +11,8 @@ defmodule Keila.Auth.User do
     field(:locale, :string)
 
     field(:activated_at, :utc_datetime)
+    field(:first_login_required, :boolean, default: false)
+    field(:invited_at, :utc_datetime)
 
     has_many(:user_groups, Keila.Auth.UserGroup)
     has_many(:group_roles, through: [:user_groups, :user_group_roles])
@@ -23,7 +25,7 @@ defmodule Keila.Auth.User do
   @spec creation_changeset(t() | Ecto.Changeset.data()) :: Ecto.Changeset.t(t)
   def creation_changeset(struct \\ %__MODULE__{}, params) do
     struct
-    |> cast(params, [:email, :password, :locale, :given_name, :family_name])
+    |> cast(params, [:email, :password, :locale, :given_name, :family_name, :first_login_required, :invited_at])
     |> validate_email()
     |> validate_password()
   end
@@ -51,11 +53,29 @@ defmodule Keila.Auth.User do
     |> validate_required([:given_name, :family_name])
   end
 
+  @doc """
+  General changeset for User updates
+  """
+  @spec changeset(t() | Ecto.Changeset.data(), map()) :: Ecto.Changeset.t(t)
+  def changeset(struct \\ %__MODULE__{}, params) do
+    struct
+    |> cast(params, [:email, :password, :locale, :given_name, :family_name, :first_login_required, :invited_at])
+    |> validate_email()
+    |> validate_password_if_present()
+  end
+
+  defp validate_password_if_present(changeset) do
+    if get_change(changeset, :password) do
+      validate_password(changeset)
+    else
+      changeset
+    end
+  end
+
   @spec update_password_changeset(t() | Ecto.Changeset.data()) :: Ecto.Changeset.t(t)
   def update_password_changeset(struct \\ %__MODULE__{}, params) do
     struct
     |> cast(params, [:password])
-    |> validate_email()
     |> validate_password()
   end
 

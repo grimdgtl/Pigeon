@@ -11,13 +11,16 @@ config :keila, ecto_repos: [Keila.Repo]
 
 config :keila, KeilaWeb.ContactsCsvExport, chunk_size: 100
 
+# Invite configuration
+config :keila, :invite_ttl_hours, System.get_env("INVITE_TTL_HOURS", "72") |> String.to_integer()
+
 # Configures the endpoint
 config :keila, KeilaWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "ipC9dsQLUBKuLmcrKzqB3m1M/Sw/53FcA1xQd1yUKdTSqjlBqL729evTWqqwd6zT",
+  secret_key_base: System.get_env("SECRET_KEY_BASE", "dev_secret_key_base_change_me_in_production"),
   render_errors: [view: KeilaWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: Keila.PubSub,
-  live_view: [signing_salt: "kH+cT7XL"]
+  live_view: [signing_salt: System.get_env("LIVE_VIEW_SALT", "dev_live_view_salt_change_me")]
 
 # Configure file uploads and serving of files
 config :keila, Keila.Files, adapter: Keila.Files.StorageAdapters.Local
@@ -114,7 +117,20 @@ config :keila, KeilaWeb.Gettext,
 config :ex_cldr,
   default_backend: Keila.Cldr
 
-config(:keila, Keila.Auth.Emails, from_email: "keila@localhost")
+# ===== Mailer (SMTP) =====
+config :keila, Keila.Mailer,
+  adapter: Swoosh.Adapters.SMTP,
+  relay: System.get_env("MAILER_SMTP_HOST", "mailhog"),
+  port: String.to_integer(System.get_env("MAILER_SMTP_PORT", "1025")),
+  username: System.get_env("MAILER_SMTP_USERNAME", ""),
+  password: System.get_env("MAILER_SMTP_PASSWORD", ""),
+  ssl: false,
+  tls: :never,
+  auth: :never
+
+# From adresa za auth mejlove (može da se prepiše env varijablom)
+config :keila, Keila.Auth.Emails,
+  from_email: System.get_env("MAILER_SMTP_FROM_EMAIL", "dev@localhost")
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

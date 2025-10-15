@@ -1,6 +1,6 @@
 <%= if @current_user do %>
-  <aside class="flex bg-gray-800 overflow-y-auto">
-    <div id="main-menu" class="container sm:h-screen sm:flex sm:flex-col">
+  <aside class={["flex bg-gray-800 overflow-y-auto", ui_refresh_class()]}>
+    <div id="main-menu" class={["container sm:h-screen sm:flex sm:flex-col", ui_refresh_class()]}>
       <input id="main-menu-toggle" type="checkbox" aria-hidden="true" class="hidden" />
       <div class="absolute inset-y-0 h-14 top-2 right-4 flex items-center sm:hidden">
         <label
@@ -142,7 +142,22 @@
         <% end %>
         <div class="hidden sm:block sm:flex-grow"></div>
         <%= menu_link(@conn, Routes.account_path(@conn, :edit), gettext("Account"), icon: :user) %>
-        <%= if assigns[:is_admin?] do %>
+        
+        <%= if Mix.env() == :dev do %>
+          <div class="text-xs text-gray-400 p-2 border-t border-gray-700">
+            <div>User: <%= @current_user.email %></div>
+            <div>Role: <%= case Keila.RBAC.get_user_role_in_account(@current_user.id, @current_account.id) do
+              {:ok, role} -> role
+              {:error, _} -> "no role"
+            end %></div>
+            <div>Is Super Admin: <%= @current_user_is_super_admin %></div>
+            <div>@is_admin?: <%= @is_admin? %></div>
+            <div>RBAC Check: <%= Keila.RBAC.is_super_admin?(@current_user.id) %></div>
+          </div>
+        <% end %>
+        
+        <%= if @current_user_is_super_admin do %>
+          <%= menu_link(@conn, Routes.tenant_admin_path(@conn, :index), "Tenants", icon: :office_building) %>
           <%= menu_link(@conn, Routes.user_admin_path(@conn, :index), gettext("Users"),
             icon: :users
           ) %>
@@ -155,6 +170,15 @@
             dgettext("admin", "System Info"),
             icon: :information_circle
           ) %>
+        <% else %>
+          <%= if @current_user_is_tenant_admin do %>
+            <%= menu_link(@conn, Routes.user_admin_path(@conn, :index), gettext("Users"),
+              icon: :users
+            ) %>
+            <%= menu_link(@conn, Routes.shared_sender_admin_path(@conn, :index), gettext("Senders"),
+              icon: :speakerphone
+            ) %>
+          <% end %>
         <% end %>
         <%= menu_link(@conn, Routes.auth_path(@conn, :logout), gettext("Sign out"), icon: :logout) %>
       </nav>

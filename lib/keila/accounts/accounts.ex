@@ -55,6 +55,7 @@ defmodule Keila.Accounts do
     |> join(:inner, [a, g], ug in Auth.UserGroup, on: ug.group_id == g.id)
     |> join(:inner, [a, g, ug], u in Auth.User, on: u.id == ug.user_id)
     |> where([a, g, ug, u], u.id == ^user_id)
+    |> limit(1)
     |> Repo.one()
   end
 

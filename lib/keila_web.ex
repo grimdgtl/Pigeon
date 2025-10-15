@@ -99,6 +99,7 @@ defmodule KeilaWeb do
       import KeilaWeb.DeleteButtonHelpers
       import KeilaWeb.IconHelper
       import KeilaWeb.DateTimeHelpers
+      import KeilaWeb.UIHelpers
       import KeilaWeb.Gettext
       alias KeilaWeb.Router.Helpers, as: Routes
       alias Phoenix.LiveView.JS

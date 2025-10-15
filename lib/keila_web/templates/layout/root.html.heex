@@ -30,18 +30,20 @@
     </script>
   </head>
   <%= if @current_user do %>
-    <body class="grid grid-cols-1 sm:grid-cols-[16em,1fr]">
+    <body class={["grid grid-cols-1 sm:grid-cols-[16em,1fr]", ui_refresh_class()]}>
       <%= render("_menu.html", assigns) %>
-      <div>
+      <div class="page-container">
         <%= @inner_content %>
         <%= render("_footer.html", assigns) %>
       </div>
     </body>
   <% else %>
-    <body class="grid grid-cols-1">
+    <body class={["grid grid-cols-1", ui_refresh_class()]}>
       <%= render("_menu.html", assigns) %>
-      <%= @inner_content %>
-      <%= render("_footer.html", assigns) %>
+      <div class="page-container">
+        <%= @inner_content %>
+        <%= render("_footer.html", assigns) %>
+      </div>
     </body>
   <% end %>
 </html>

@@ -1,0 +1,24 @@
+<%= if ui_refresh_enabled?() do %>
+  <%= case @variant do
+    :primary ->
+      link(to: @to, method: @method, class: "btn btn-primary #{@class}", do: @inner_content)
+    :secondary ->
+      link(to: @to, method: @method, class: "btn btn-secondary #{@class}", do: @inner_content)
+    :danger ->
+      link(to: @to, method: @method, class: "btn btn-danger #{@class}", do: @inner_content)
+    _ ->
+      link(to: @to, method: @method, class: "btn btn-primary #{@class}", do: @inner_content)
+  end %>
+<% else %>
+  <!-- Fallback for old UI -->
+  <%= case @variant do
+    :primary ->
+      link(to: @to, method: @method, class: "button button--cta #{@class}", do: @inner_content)
+    :secondary ->
+      link(to: @to, method: @method, class: "button button--muted #{@class}", do: @inner_content)
+    :danger ->
+      link(to: @to, method: @method, class: "button button--warn #{@class}", do: @inner_content)
+    _ ->
+      link(to: @to, method: @method, class: "button button--cta #{@class}", do: @inner_content)
+  end %>
+<% end %>

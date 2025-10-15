@@ -1,0 +1,50 @@
+<h1 class="mb-4 text-xl font-semibold">Tenant: <%= @project.name || "##{@project.id}" %></h1>
+
+<section class="mb-6">
+  <h2 class="font-medium mb-2">Admins</h2>
+  <%= if @admins == [] do %>
+    <p>No admins yet.</p>
+  <% else %>
+    <ul class="list-disc pl-6">
+      <%= for u <- @admins do %>
+        <li><%= u.email %></li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>
+
+<section class="mb-6">
+  <h2 class="font-medium mb-2">Send Admin Invite</h2>
+  <%= form_for :invite, Routes.tenant_admin_path(@conn, :send_invite, @project.id), fn _f -> %>
+    <input class="border p-2 mr-2" type="email" name="invite[email]" placeholder="invite@newclient.com" required>
+    <%= submit "Send invite", class: "px-3 py-2 bg-black text-white rounded" %>
+  <% end %>
+</section>
+
+<section class="mb-6">
+  <h2 class="font-medium mb-2">Create Admin Now</h2>
+  <%= form_for :admin, Routes.tenant_admin_path(@conn, :create_admin, @project.id), fn _f -> %>
+    <input class="border p-2 mr-2" type="email" name="admin[email]" placeholder="admin@newclient.com" required>
+    <input class="border p-2 mr-2" type="password" name="admin[password]" placeholder="Temporary password (optional)">
+    <%= submit "Create admin", class: "px-3 py-2 bg-black text-white rounded" %>
+  <% end %>
+</section>
+
+<section>
+  <h2 class="font-medium mb-2">Pending Invites</h2>
+  <%= if @invites == [] do %>
+    <p>No pending invites.</p>
+  <% else %>
+    <ul class="list-disc pl-6">
+      <%= for inv <- @invites do %>
+        <li class="flex items-center gap-3">
+          <span><%= inv.email %> — expires: <%= inv.expires_at %></span>
+          <%= link "Revoke",
+              to: Routes.tenant_admin_path(@conn, :revoke_invite, @project.id, token: inv.token),
+              data: [confirm: "Revoke invite for #{inv.email}?" ],
+              class: "underline text-red-600" %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</section>

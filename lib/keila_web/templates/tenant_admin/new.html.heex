@@ -1,0 +1,38 @@
+<h1 class="mb-4 text-xl font-semibold">Create Tenant (Hot Reload Working!)</h1>
+
+<%= form_for @changeset, Routes.tenant_admin_path(@conn, :create), [as: :tenant], fn f -> %>
+  <div class="mb-3">
+    <%= label f, :name %>
+    <%= text_input f, :name, required: true, class: "border p-2 w-full" %>
+    <%= error_tag f, :name %>
+  </div>
+
+  <div class="mb-3">
+    <p class="font-medium mb-2">Onboarding flow</p>
+    <label class="block mb-1">
+      <%= radio_button f, :onboarding_flow, "create_admin_now" %>
+      <span class="ml-2">Create Admin Now</span>
+    </label>
+    <label class="block">
+      <%= radio_button f, :onboarding_flow, "send_admin_invite" %>
+      <span class="ml-2">Send Admin Invite</span>
+    </label>
+  </div>
+
+  <div class="mb-3">
+    <%= label f, :admin_email, "Admin Email (for Create Admin Now)" %>
+    <%= text_input f, :admin_email, class: "border p-2 w-full" %>
+    <%= error_tag f, :admin_email %>
+  </div>
+
+  <div class="mb-6">
+    <%= label f, :invite_email, "Invite Email (for Send Admin Invite)" %>
+    <%= text_input f, :invite_email, class: "border p-2 w-full" %>
+    <%= error_tag f, :invite_email %>
+  </div>
+
+  <div class="flex gap-2">
+    <%= submit "Create", class: "px-3 py-2 bg-black text-white rounded" %>
+    <%= link "Cancel", to: Routes.tenant_admin_path(@conn, :index), class: "px-3 py-2 border rounded" %>
+  </div>
+<% end %>

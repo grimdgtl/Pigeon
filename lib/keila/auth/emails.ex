@@ -1,15 +1,13 @@
 defmodule Keila.Auth.Emails do
   import Swoosh.Email
-  # FIXME Don't depend on Web App here
-  import KeilaWeb.Gettext
+  # Use Web Gettext backend without importing the module twice
+  use Gettext, backend: KeilaWeb.Gettext
 
   @spec send!(atom(), map()) :: term() | no_return()
   def send!(email, params) do
-    config = Application.get_env(:keila, __MODULE__, [])
-
     email
     |> build(params)
-    |> Keila.Mailer.deliver!(config)
+    |> Keila.Mailer.deliver!()
   end
 
   @spec build(:activate, %{url: String.t(), user: Keila.Auth.User.t()}) :: term() | no_return()
@@ -104,6 +102,65 @@ defmodule Keila.Auth.Emails do
         If you haven’t requested a login, simply ignore this message.
         """,
         url: url
+      )
+    )
+  end
+
+  @spec build(:welcome_set_password, %{user: Keila.Auth.User.t(), reset_url: String.t()}) ::
+          term() | no_return()
+  def build(:welcome_set_password, %{user: user, reset_url: reset_url}) do
+    new()
+    |> subject(dgettext("auth", "Welcome to Keila - Set up your password"))
+    |> to(user.email)
+    |> from({"Keila", system_from_email()})
+    |> text_body(
+      dgettext(
+        "auth",
+        """
+        Welcome to Keila!
+
+        Hello %{email}!
+
+        Your account has been created. Please set your password by visiting the following link:
+        %{url}
+
+        This link will expire shortly.
+
+        If you have any questions, please contact support.
+        """,
+        email: user.email,
+        url: reset_url
+      )
+    )
+  end
+
+  @spec build(:invite_admin, %{email: String.t(), project_name: String.t(), invite_url: String.t(), expires_at: DateTime.t()}) ::
+          term() | no_return()
+  def build(:invite_admin, %{email: email, project_name: project_name, invite_url: invite_url, expires_at: expires_at}) do
+    new()
+    |> subject(dgettext("auth", "You're invited to Keila - %{project_name}", project_name: project_name))
+    |> to(email)
+    |> from({"Keila", system_from_email()})
+    |> text_body(
+      dgettext(
+        "auth",
+        """
+        You're invited to Keila - %{project_name}
+
+        Welcome to %{project_name}!
+
+        You've been invited to join Keila as an administrator for the project "%{project_name}".
+
+        To accept the invitation and set your password, please visit the following link:
+        %{url}
+
+        This invitation will expire on %{expires_at}.
+
+        If you have any questions, please contact support.
+        """,
+        project_name: project_name,
+        url: invite_url,
+        expires_at: DateTime.to_string(expires_at)
       )
     )
   end
